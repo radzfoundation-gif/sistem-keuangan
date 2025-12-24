@@ -136,7 +136,7 @@ export function AddTransactionDialog() {
       <DialogTrigger asChild>
         <Button className="gap-2">
           <PlusIcon className="size-4" />
-          Tambah Transaksi
+          <span className="hidden sm:inline">Tambah Transaksi</span>
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[500px]">

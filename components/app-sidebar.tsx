@@ -13,6 +13,8 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { LayoutDashboardIcon, FileTextIcon, SettingsIcon, TrendingUpIcon, WalletIcon, MegaphoneIcon } from "lucide-react"
 import Image from "next/image"
+import { createClient } from "@/lib/supabase"
+import { useEffect, useState } from "react"
 
 const menuItems = [
   {
@@ -43,6 +45,22 @@ const menuItems = [
 ]
 
 export function AppSidebar() {
+  const [userEmail, setUserEmail] = useState<string>("")
+  const [userName, setUserName] = useState<string>("Admin")
+
+  useEffect(() => {
+    const supabase = createClient()
+    async function getUser() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user?.email) {
+        setUserEmail(user.email)
+        // Set name from metadata if available, or just use "Admin" or part of email
+        setUserName(user.user_metadata?.full_name || "Bendahara")
+      }
+    }
+    getUser()
+  }, [])
+
   return (
     <Sidebar>
       <SidebarHeader className="border-b border-border p-4">
@@ -78,8 +96,10 @@ export function AppSidebar() {
             <AvatarFallback className="bg-muted text-foreground text-xs font-medium">AB</AvatarFallback>
           </Avatar>
           <div className="flex flex-col min-w-0">
-            <span className="text-sm font-medium leading-none truncate">Dhananjaya Admin</span>
-            <span className="text-xs text-muted-foreground leading-none mt-1 truncate">dhananjaya@admin.com</span>
+            <span className="text-sm font-medium leading-none truncate">{userName}</span>
+            <span className="text-xs text-muted-foreground leading-none mt-1 truncate" title={userEmail}>
+              {userEmail || "Memuat..."}
+            </span>
           </div>
         </div>
       </SidebarFooter>

@@ -79,7 +79,7 @@ export function AiInsightsDialog() {
             <DialogTrigger asChild>
                 <Button variant="outline" className="gap-2 border-indigo-200 text-indigo-700 bg-indigo-50 hover:bg-indigo-100">
                     <BotIcon className="size-4" />
-                    Analisis AI
+                    <span className="hidden sm:inline">Analisis AI</span>
                 </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[600px]">

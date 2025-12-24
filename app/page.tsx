@@ -48,7 +48,7 @@ export default function Home() {
           </div>
         </header>
 
-        <main className="flex flex-1 flex-col gap-6 p-4 md:p-6">
+        <main className="flex flex-1 flex-col gap-6 p-4 md:p-6 overflow-x-hidden">
           {/* Stats Overview */}
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <StatCard
@@ -82,7 +82,7 @@ export default function Home() {
           </div>
 
           <div className="grid gap-6 md:grid-cols-7 lg:grid-cols-7">
-            <div className="col-span-4 lg:col-span-5 space-y-6">
+            <div className="col-span-full md:col-span-4 lg:col-span-5 space-y-6 min-w-0">
               {/* Transactions Table Area - Removed AiSummaryCard */}
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
@@ -95,7 +95,7 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="col-span-3 lg:col-span-2">
+            <div className="col-span-full md:col-span-3 lg:col-span-2 min-w-0">
               <TransactionCalendar />
             </div>
           </div>
