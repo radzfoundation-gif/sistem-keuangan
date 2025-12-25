@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { toast } from "sonner"
 import { useTransactions } from "@/contexts/TransactionsContext"
 import { useState } from "react"
-import { Trash2Icon, DownloadIcon } from "lucide-react"
+import { Trash2Icon, DownloadIcon, PlusIcon, XIcon } from "lucide-react"
 import {
     AlertDialog,
     AlertDialogAction,
@@ -24,10 +24,85 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
+import { createClient } from "@/lib/supabase"
+import { useEffect } from "react"
 
 export default function PengaturanPage() {
     const { transactions } = useTransactions()
     const [isDeleting, setIsDeleting] = useState(false)
+    const [isSaving, setIsSaving] = useState(false)
+
+    // Profile State
+    const [communityName, setCommunityName] = useState("")
+    const [treasurerName, setTreasurerName] = useState("")
+    const [contactEmail, setContactEmail] = useState("")
+
+    // Treasurer List State
+    const [treasurerList, setTreasurerList] = useState<string[]>([])
+    const [newTreasurer, setNewTreasurer] = useState("")
+
+    useEffect(() => {
+        const supabase = createClient()
+        async function loadProfile() {
+            const { data: { user } } = await supabase.auth.getUser()
+            if (user) {
+                setCommunityName(user.user_metadata?.community_name || "Komunitas Maju Bersama")
+                setTreasurerName(user.user_metadata?.full_name || "Admin")
+                setContactEmail(user.email || "")
+
+                const storedTreasurers = user.user_metadata?.stored_treasurers
+                if (Array.isArray(storedTreasurers)) {
+                    setTreasurerList(storedTreasurers)
+                } else {
+                    setTreasurerList(["Admin"])
+                }
+            }
+        }
+        loadProfile()
+    }, [])
+
+    const handleSaveProfile = async () => {
+        setIsSaving(true)
+        try {
+            const supabase = createClient()
+            const { error } = await supabase.auth.updateUser({
+                data: {
+                    community_name: communityName,
+                    full_name: treasurerName,
+                    stored_treasurers: treasurerList,
+                }
+            })
+
+            if (error) throw error
+
+            toast.success("Profil berhasil disimpan", {
+                description: "Data bendahara telah diperbarui"
+            })
+
+            // Reload window to update sidebars etc (simple way)
+            setTimeout(() => window.location.reload(), 1000)
+
+        } catch (error) {
+            toast.error("Gagal menyimpan profil")
+        } finally {
+            setIsSaving(false)
+        }
+    }
+
+    const handleAddTreasurer = () => {
+        if (newTreasurer.trim()) {
+            if (!treasurerList.includes(newTreasurer.trim())) {
+                setTreasurerList([...treasurerList, newTreasurer.trim()])
+                setNewTreasurer("")
+            } else {
+                toast.error("Nama bendahara sudah ada")
+            }
+        }
+    }
+
+    const handleRemoveTreasurer = (name: string) => {
+        setTreasurerList(treasurerList.filter(t => t !== name))
+    }
 
     const handleResetData = () => {
         setIsDeleting(true)
@@ -158,19 +233,73 @@ export default function PengaturanPage() {
                                 <CardContent className="space-y-4">
                                     <div className="grid gap-2">
                                         <Label htmlFor="name">Nama Komunitas</Label>
-                                        <Input id="name" defaultValue="Komunitas Maju Bersama" />
+                                        <Input
+                                            id="name"
+                                            value={communityName}
+                                            onChange={(e) => setCommunityName(e.target.value)}
+                                            placeholder="Nama Komunitas Anda"
+                                        />
                                     </div>
                                     <div className="grid gap-2">
                                         <Label htmlFor="treasurer">Nama Bendahara Default</Label>
-                                        <Input id="treasurer" defaultValue="Admin" />
+                                        <Input
+                                            id="treasurer"
+                                            value={treasurerName}
+                                            onChange={(e) => setTreasurerName(e.target.value)}
+                                            placeholder="Nama Anda"
+                                        />
                                     </div>
                                     <div className="grid gap-2">
                                         <Label htmlFor="email">Email Kontak</Label>
-                                        <Input id="email" defaultValue="admin@komunitas.com" />
+                                        <Input
+                                            id="email"
+                                            value={contactEmail}
+                                            disabled
+                                            className="bg-muted"
+                                        />
+                                        <p className="text-[0.8rem] text-muted-foreground">Email tidak dapat diubah dari sini.</p>
+                                    </div>
+
+                                    <div className="space-y-3 pt-4 border-t">
+                                        <Label>Daftar Nama Bendahara</Label>
+                                        <div className="flex gap-2">
+                                            <Input
+                                                value={newTreasurer}
+                                                onChange={(e) => setNewTreasurer(e.target.value)}
+                                                placeholder="Tambah nama baru..."
+                                                onKeyDown={(e) => e.key === "Enter" && handleAddTreasurer()}
+                                            />
+                                            <Button size="icon" onClick={handleAddTreasurer} type="button">
+                                                <PlusIcon className="size-4" />
+                                            </Button>
+                                        </div>
+
+                                        <div className="space-y-2 mt-2">
+                                            {treasurerList.map((t, idx) => (
+                                                <div key={idx} className="flex items-center justify-between p-2 border rounded-md bg-muted/30">
+                                                    <span className="text-sm font-medium">{t}</span>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon-sm"
+                                                        className="h-6 w-6 text-muted-foreground hover:text-destructive"
+                                                        onClick={() => handleRemoveTreasurer(t)}
+                                                        type="button"
+                                                    >
+                                                        <XIcon className="size-3" />
+                                                    </Button>
+                                                </div>
+                                            ))}
+                                            {treasurerList.length === 0 && (
+                                                <p className="text-sm text-muted-foreground italic">Belum ada daftar bendahara.</p>
+                                            )}
+                                        </div>
+                                        <p className="text-[0.8rem] text-muted-foreground">List ini akan muncul di dropdown saat menambah transaksi.</p>
                                     </div>
                                 </CardContent>
                                 <CardFooter>
-                                    <Button onClick={() => toast.success("Profil berhasil disimpan")}>Simpan Perubahan</Button>
+                                    <Button onClick={handleSaveProfile} disabled={isSaving}>
+                                        {isSaving ? "Menyimpan..." : "Simpan Perubahan"}
+                                    </Button>
                                 </CardFooter>
                             </Card>
                         </TabsContent>

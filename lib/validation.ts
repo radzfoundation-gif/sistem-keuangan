@@ -14,7 +14,9 @@ export const transactionSchema = z.object({
     description: z.string().min(3, "Keterangan minimal 3 karakter"),
     treasurer: z.string().min(2, "Nama bendahara minimal 2 karakter"),
     eventId: z.string().optional(),
-    date: z.string().optional(),
+    date: z.string({
+        required_error: "Tanggal harus diisi",
+    }),
 })
 
 export type TransactionFormData = z.infer<typeof transactionSchema>

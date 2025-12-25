@@ -21,6 +21,7 @@ import { PlusIcon } from "lucide-react"
 import { toast } from "sonner"
 import { useTransactions } from "@/contexts/TransactionsContext"
 import { useEvents } from "@/contexts/EventsContext"
+import { useTreasurers } from "@/hooks/use-treasurers"
 import { transactionSchema, type TransactionFormData } from "@/lib/validation"
 import { generateNotaPDF } from "@/lib/nota-generator"
 import { generateQRCode, generateTransactionQRData } from "@/lib/qrcode"
@@ -28,9 +29,9 @@ import { VoiceInput } from "@/components/voice-input"
 
 export function AddTransactionDialog() {
   const [open, setOpen] = useState(false)
-  const [autoGenerateNota, setAutoGenerateNota] = useState(true)
   const { addTransaction } = useTransactions()
   const { events } = useEvents()
+  const { treasurers, loading: loadingTreasurers } = useTreasurers()
 
   // Filter only planned or active events
   const activeEvents = events.filter(e => e.status !== "COMPLETED")
@@ -50,6 +51,7 @@ export function AddTransactionDialog() {
       category: "",
       description: "",
       treasurer: "",
+      date: new Date().toISOString().split("T")[0],
     },
   })
 
@@ -73,7 +75,7 @@ export function AddTransactionDialog() {
         description: data.description,
         treasurer: data.treasurer,
         eventId: data.eventId, // Pass eventId specifically
-        date: new Date().toISOString().split("T")[0],
+        date: data.date,
       }
 
       addTransaction(newTransaction)
@@ -87,20 +89,9 @@ export function AddTransactionDialog() {
       })
 
       // Auto-generate nota PDF if checkbox is checked
-      if (autoGenerateNota) {
-        const transactionWithId = {
-          ...newTransaction,
-          id: transactionId,
-        }
-        await generateNotaPDF(transactionWithId)
-        toast.success("Nota otomatis didownload!", {
-          description: "Nota PDF telah dihasilkan & tersimpan di menu Nota",
-        })
-      } else {
-        toast.success("Nota tersimpan di menu Nota", {
-          description: "Anda bisa download nota kapan saja",
-        })
-      }
+      toast.success("Nota tersimpan di menu Nota", {
+        description: "Anda bisa download nota kapan saja",
+      })
 
       reset()
       setOpen(false)
@@ -146,6 +137,17 @@ export function AddTransactionDialog() {
               </Select>
               {errors.type && <p className="text-sm text-destructive">{errors.type.message}</p>}
             </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="date">Tanggal</Label>
+              <Input
+                id="date"
+                type="date"
+                {...register("date")}
+              />
+              {errors.date && <p className="text-sm text-destructive">{errors.date.message}</p>}
+            </div>
+
             <div className="grid gap-2">
               <Label htmlFor="amount">Nominal</Label>
               <Input
@@ -181,7 +183,18 @@ export function AddTransactionDialog() {
             </div>
             <div className="grid gap-2">
               <Label htmlFor="treasurer">Nama Bendahara</Label>
-              <Input id="treasurer" placeholder="Nama Anda" {...register("treasurer")} />
+              <Select onValueChange={(value) => setValue("treasurer", value)}>
+                <SelectTrigger id="treasurer">
+                  <SelectValue placeholder={loadingTreasurers ? "Memuat..." : "Pilih bendahara"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {treasurers.map((t) => (
+                    <SelectItem key={t} value={t}>
+                      {t}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               {errors.treasurer && <p className="text-sm text-destructive">{errors.treasurer.message}</p>}
             </div>
 
@@ -202,15 +215,7 @@ export function AddTransactionDialog() {
               </Select>
             </div>
 
-            <div className="flex items-center space-x-2 pt-2">
-              <Checkbox id="auto-nota" checked={autoGenerateNota} onCheckedChange={(checked) => setAutoGenerateNota(checked as boolean)} />
-              <label
-                htmlFor="auto-nota"
-                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-              >
-                Otomatis download nota setelah simpan
-              </label>
-            </div>
+            {/* Removed auto-download checkbox */}
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>

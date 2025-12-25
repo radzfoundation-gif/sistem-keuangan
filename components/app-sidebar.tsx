@@ -13,6 +13,7 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { LayoutDashboardIcon, FileTextIcon, SettingsIcon, TrendingUpIcon, WalletIcon, MegaphoneIcon } from "lucide-react"
 import Image from "next/image"
+import { usePathname } from "next/navigation"
 import { createClient } from "@/lib/supabase"
 import { useEffect, useState } from "react"
 
@@ -33,8 +34,13 @@ const menuItems = [
     url: "/nota",
   },
   {
-    title: "Laporan",
+    title: "Rekap",
     icon: TrendingUpIcon,
+    url: "/rekap",
+  },
+  {
+    title: "Laporan",
+    icon: FileTextIcon,
     url: "/laporan",
   },
   {
@@ -45,6 +51,7 @@ const menuItems = [
 ]
 
 export function AppSidebar() {
+  const pathname = usePathname()
   const [userEmail, setUserEmail] = useState<string>("")
   const [userName, setUserName] = useState<string>("Admin")
 
@@ -69,7 +76,7 @@ export function AppSidebar() {
             <Image src="/logo-dhananjaya-new.jpg" alt="Logo" fill className="object-contain p-1" />
           </div>
           <div className="flex flex-col">
-            <span className="text-sm font-semibold leading-none">Keuangan</span>
+            <span className="text-sm font-semibold leading-none">Dhananjaya</span>
             <span className="text-xs text-muted-foreground leading-none mt-1">Komunitas</span>
           </div>
         </div>
@@ -79,7 +86,7 @@ export function AppSidebar() {
           <SidebarMenu>
             {menuItems.map((item) => (
               <SidebarMenuItem key={item.title}>
-                <SidebarMenuButton asChild isActive={item.url === "/"}>
+                <SidebarMenuButton asChild isActive={item.url === "/" ? pathname === "/" : pathname.startsWith(item.url)}>
                   <a href={item.url}>
                     <item.icon className="size-4" />
                     <span>{item.title}</span>
