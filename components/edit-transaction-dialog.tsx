@@ -17,6 +17,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { toast } from "sonner"
 import { useTransactions, type Transaction } from "@/contexts/TransactionsContext"
+import { useTreasurers } from "@/hooks/use-treasurers"
 import { transactionSchema, type TransactionFormData } from "@/lib/validation"
 
 interface EditTransactionDialogProps {
@@ -27,6 +28,7 @@ interface EditTransactionDialogProps {
 
 export function EditTransactionDialog({ transaction, open, onOpenChange }: EditTransactionDialogProps) {
     const { updateTransaction } = useTransactions()
+    const { treasurers, loading: loadingTreasurers } = useTreasurers()
 
     const {
         register,
@@ -141,7 +143,21 @@ export function EditTransactionDialog({ transaction, open, onOpenChange }: EditT
                         </div>
                         <div className="grid gap-2">
                             <Label htmlFor="edit-treasurer">Nama Bendahara</Label>
-                            <Input id="edit-treasurer" placeholder="Nama Anda" {...register("treasurer")} />
+                            <Select
+                                defaultValue={transaction.treasurer}
+                                onValueChange={(value) => setValue("treasurer", value)}
+                            >
+                                <SelectTrigger id="edit-treasurer">
+                                    <SelectValue placeholder={loadingTreasurers ? "Memuat..." : "Pilih bendahara"} />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {treasurers.map((t) => (
+                                        <SelectItem key={t} value={t}>
+                                            {t}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
                             {errors.treasurer && <p className="text-sm text-destructive">{errors.treasurer.message}</p>}
                         </div>
                     </div>

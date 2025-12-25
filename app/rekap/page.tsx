@@ -6,9 +6,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge"
 import { useTransactions, type Transaction } from "@/contexts/TransactionsContext"
 import { formatCurrency } from "@/lib/currency"
-import { WalletIcon } from "lucide-react"
+import { WalletIcon, FileTextIcon } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
+import { toast } from "sonner"
+import { generateNotaPDF } from "@/lib/nota-generator"
 
 export default function RekapPage() {
     const { transactions } = useTransactions()
@@ -49,6 +51,15 @@ export default function RekapPage() {
         const dateB = new Date(groupedTransactions[b][0].date)
         return dateB.getTime() - dateA.getTime()
     })
+
+    const handleDownloadNota = async (transaction: Transaction) => {
+        try {
+            await generateNotaPDF(transaction)
+            toast.success("Nota berhasil didownload")
+        } catch (error) {
+            toast.error("Gagal mendownload nota")
+        }
+    }
 
     return (
         <div className="min-h-screen bg-background p-4 md:p-8">
@@ -96,6 +107,7 @@ export default function RekapPage() {
                                                 <TableHead>Keterangan</TableHead>
                                                 <TableHead className="text-right">Nominal</TableHead>
                                                 <TableHead>Bendahara</TableHead>
+                                                <TableHead className="w-[50px]"></TableHead>
                                             </TableRow>
                                         </TableHeader>
                                         <TableBody>
@@ -128,6 +140,16 @@ export default function RekapPage() {
                                                         {transaction.type === "MASUK" ? "+" : "-"} {formatCurrency(transaction.amount)}
                                                     </TableCell>
                                                     <TableCell className="text-muted-foreground text-sm">{transaction.treasurer}</TableCell>
+                                                    <TableCell>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon-sm"
+                                                            onClick={() => handleDownloadNota(transaction)}
+                                                            title="Download Nota"
+                                                        >
+                                                            <FileTextIcon className="size-4" />
+                                                        </Button>
+                                                    </TableCell>
                                                 </TableRow>
                                             ))}
                                         </TableBody>

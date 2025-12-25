@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { toast } from "sonner"
 import { useTransactions } from "@/contexts/TransactionsContext"
 import { useState } from "react"
-import { Trash2Icon, DownloadIcon } from "lucide-react"
+import { Trash2Icon, DownloadIcon, PlusIcon, XIcon } from "lucide-react"
 import {
     AlertDialog,
     AlertDialogAction,
@@ -37,6 +37,10 @@ export default function PengaturanPage() {
     const [treasurerName, setTreasurerName] = useState("")
     const [contactEmail, setContactEmail] = useState("")
 
+    // Treasurer List State
+    const [treasurerList, setTreasurerList] = useState<string[]>([])
+    const [newTreasurer, setNewTreasurer] = useState("")
+
     useEffect(() => {
         const supabase = createClient()
         async function loadProfile() {
@@ -45,6 +49,13 @@ export default function PengaturanPage() {
                 setCommunityName(user.user_metadata?.community_name || "Komunitas Maju Bersama")
                 setTreasurerName(user.user_metadata?.full_name || "Admin")
                 setContactEmail(user.email || "")
+
+                const storedTreasurers = user.user_metadata?.stored_treasurers
+                if (Array.isArray(storedTreasurers)) {
+                    setTreasurerList(storedTreasurers)
+                } else {
+                    setTreasurerList(["Admin"])
+                }
             }
         }
         loadProfile()
@@ -58,6 +69,7 @@ export default function PengaturanPage() {
                 data: {
                     community_name: communityName,
                     full_name: treasurerName,
+                    stored_treasurers: treasurerList,
                 }
             })
 
@@ -75,6 +87,21 @@ export default function PengaturanPage() {
         } finally {
             setIsSaving(false)
         }
+    }
+
+    const handleAddTreasurer = () => {
+        if (newTreasurer.trim()) {
+            if (!treasurerList.includes(newTreasurer.trim())) {
+                setTreasurerList([...treasurerList, newTreasurer.trim()])
+                setNewTreasurer("")
+            } else {
+                toast.error("Nama bendahara sudah ada")
+            }
+        }
+    }
+
+    const handleRemoveTreasurer = (name: string) => {
+        setTreasurerList(treasurerList.filter(t => t !== name))
     }
 
     const handleResetData = () => {
@@ -231,6 +258,42 @@ export default function PengaturanPage() {
                                             className="bg-muted"
                                         />
                                         <p className="text-[0.8rem] text-muted-foreground">Email tidak dapat diubah dari sini.</p>
+                                    </div>
+
+                                    <div className="space-y-3 pt-4 border-t">
+                                        <Label>Daftar Nama Bendahara</Label>
+                                        <div className="flex gap-2">
+                                            <Input
+                                                value={newTreasurer}
+                                                onChange={(e) => setNewTreasurer(e.target.value)}
+                                                placeholder="Tambah nama baru..."
+                                                onKeyDown={(e) => e.key === "Enter" && handleAddTreasurer()}
+                                            />
+                                            <Button size="icon" onClick={handleAddTreasurer} type="button">
+                                                <PlusIcon className="size-4" />
+                                            </Button>
+                                        </div>
+
+                                        <div className="space-y-2 mt-2">
+                                            {treasurerList.map((t, idx) => (
+                                                <div key={idx} className="flex items-center justify-between p-2 border rounded-md bg-muted/30">
+                                                    <span className="text-sm font-medium">{t}</span>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon-sm"
+                                                        className="h-6 w-6 text-muted-foreground hover:text-destructive"
+                                                        onClick={() => handleRemoveTreasurer(t)}
+                                                        type="button"
+                                                    >
+                                                        <XIcon className="size-3" />
+                                                    </Button>
+                                                </div>
+                                            ))}
+                                            {treasurerList.length === 0 && (
+                                                <p className="text-sm text-muted-foreground italic">Belum ada daftar bendahara.</p>
+                                            )}
+                                        </div>
+                                        <p className="text-[0.8rem] text-muted-foreground">List ini akan muncul di dropdown saat menambah transaksi.</p>
                                     </div>
                                 </CardContent>
                                 <CardFooter>

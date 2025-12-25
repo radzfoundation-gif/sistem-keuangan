@@ -21,6 +21,7 @@ import { PlusIcon } from "lucide-react"
 import { toast } from "sonner"
 import { useTransactions } from "@/contexts/TransactionsContext"
 import { useEvents } from "@/contexts/EventsContext"
+import { useTreasurers } from "@/hooks/use-treasurers"
 import { transactionSchema, type TransactionFormData } from "@/lib/validation"
 import { generateNotaPDF } from "@/lib/nota-generator"
 import { generateQRCode, generateTransactionQRData } from "@/lib/qrcode"
@@ -31,6 +32,7 @@ export function AddTransactionDialog() {
   const [autoGenerateNota, setAutoGenerateNota] = useState(true)
   const { addTransaction } = useTransactions()
   const { events } = useEvents()
+  const { treasurers, loading: loadingTreasurers } = useTreasurers()
 
   // Filter only planned or active events
   const activeEvents = events.filter(e => e.status !== "COMPLETED")
@@ -193,7 +195,18 @@ export function AddTransactionDialog() {
             </div>
             <div className="grid gap-2">
               <Label htmlFor="treasurer">Nama Bendahara</Label>
-              <Input id="treasurer" placeholder="Nama Anda" {...register("treasurer")} />
+              <Select onValueChange={(value) => setValue("treasurer", value)}>
+                <SelectTrigger id="treasurer">
+                  <SelectValue placeholder={loadingTreasurers ? "Memuat..." : "Pilih bendahara"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {treasurers.map((t) => (
+                    <SelectItem key={t} value={t}>
+                      {t}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               {errors.treasurer && <p className="text-sm text-destructive">{errors.treasurer.message}</p>}
             </div>
 
