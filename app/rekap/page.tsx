@@ -45,31 +45,28 @@ export default function RekapPage() {
 
     const totalSaldo = totalIncome - totalExpense
 
-    // Group Transactions by Month
+    // Group Transactions by Category
     const groupedTransactions: Record<string, Transaction[]> = {}
 
     transactions.forEach(transaction => {
-        const date = new Date(transaction.date)
-        const monthYear = date.toLocaleDateString("id-ID", { month: "long", year: "numeric" })
+        const category = transaction.category
 
-        if (!groupedTransactions[monthYear]) {
-            groupedTransactions[monthYear] = []
+        if (!groupedTransactions[category]) {
+            groupedTransactions[category] = []
         }
-        groupedTransactions[monthYear].push(transaction)
+        groupedTransactions[category].push(transaction)
     })
 
-    // Sort months (newest first)
-    // We can't rely just on string sort. We need to grab one transaction from each group to check date, or parse the key.
-    // Easier approach: Get keys, map to object with date, sort by date desc.
-    const sortedGroups = Object.keys(groupedTransactions).sort((a, b) => {
-        // Compare by the date of the first transaction in the group (since they are all in same month)
-        // Transactions context typically returns sorted by date desc already, but let's be safe.
-        // If the context isn't sorted, we might need robust parsing.
-        // Assuming context is sorted desc:
-        const dateA = new Date(groupedTransactions[a][0].date)
-        const dateB = new Date(groupedTransactions[b][0].date)
-        return dateB.getTime() - dateA.getTime()
-    })
+    // Sort categories alphabetically
+    const sortedCategories = Object.keys(groupedTransactions).sort((a, b) => a.localeCompare(b, 'id'))
+
+    // Calculate total per category
+    const getCategoryTotal = (category: string) => {
+        const categoryTransactions = groupedTransactions[category]
+        const income = categoryTransactions.filter(t => t.type === "MASUK").reduce((sum, t) => sum + t.amount, 0)
+        const expense = categoryTransactions.filter(t => t.type === "KELUAR").reduce((sum, t) => sum + t.amount, 0)
+        return { income, expense, total: income - expense }
+    }
 
     const handleViewNota = (transaction: Transaction) => {
         setSelectedTransaction(transaction)
@@ -140,100 +137,123 @@ export default function RekapPage() {
                     </CardContent>
                 </Card>
 
-                {/* Grouped Transactions */}
+                {/* Grouped Transactions by Category */}
                 <div className="space-y-8">
-                    {sortedGroups.map(monthYear => (
-                        <div key={monthYear} className="space-y-4">
-                            <h2 className="text-xl font-semibold border-b pb-2">{monthYear}</h2>
-                            <Card>
-                                <CardContent className="p-0">
-                                    <Table>
-                                        <TableHeader>
-                                            <TableRow>
-                                                <TableHead>Tanggal</TableHead>
-                                                <TableHead>Tipe</TableHead>
-                                                <TableHead>Kategori</TableHead>
-                                                <TableHead>Keterangan</TableHead>
-                                                <TableHead className="text-right">Nominal</TableHead>
-                                                <TableHead>Bendahara</TableHead>
-                                                <TableHead className="text-center w-[100px]">Aksi</TableHead>
-                                            </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                            {groupedTransactions[monthYear].map((transaction) => (
-                                                <TableRow key={transaction.id}>
-                                                    <TableCell className="font-mono text-sm whitespace-nowrap">
-                                                        {new Date(transaction.date).toLocaleDateString("id-ID", {
-                                                            day: "2-digit",
-                                                            month: "short",
-                                                        })}
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <Badge
-                                                            variant={transaction.type === "MASUK" ? "default" : "secondary"}
-                                                            className={
-                                                                transaction.type === "MASUK"
-                                                                    ? "bg-emerald-600 hover:bg-emerald-700 border-transparent text-white"
-                                                                    : "bg-rose-600 hover:bg-rose-700 border-transparent text-white"
-                                                            }
+                    {sortedCategories.map(category => {
+                        const categoryStats = getCategoryTotal(category)
+                        const transactionCount = groupedTransactions[category].length
+
+                        return (
+                            <div key={category} className="space-y-4">
+                                <div className="flex items-center justify-between border-b pb-3">
+                                    <div className="flex items-center gap-3">
+                                        <h2 className="text-xl font-semibold">{category}</h2>
+                                        <Badge variant="secondary" className="font-normal">
+                                            {transactionCount} transaksi
+                                        </Badge>
+                                    </div>
+                                    <div className="text-sm text-muted-foreground space-x-4">
+                                        {categoryStats.income > 0 && (
+                                            <span className="text-emerald-600 font-medium">
+                                                +{formatCurrency(categoryStats.income)}
+                                            </span>
+                                        )}
+                                        {categoryStats.expense > 0 && (
+                                            <span className="text-rose-600 font-medium">
+                                                -{formatCurrency(categoryStats.expense)}
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+                                <Card>
+                                    <CardContent className="p-0">
+                                        <Table>
+                                            <TableHeader>
+                                                <TableRow>
+                                                    <TableHead>Tanggal</TableHead>
+                                                    <TableHead>Tipe</TableHead>
+                                                    <TableHead>Keterangan</TableHead>
+                                                    <TableHead className="text-right">Nominal</TableHead>
+                                                    <TableHead>Bendahara</TableHead>
+                                                    <TableHead className="text-center w-[100px]">Aksi</TableHead>
+                                                </TableRow>
+                                            </TableHeader>
+                                            <TableBody>
+                                                {groupedTransactions[category].map((transaction) => (
+                                                    <TableRow key={transaction.id}>
+                                                        <TableCell className="font-mono text-sm whitespace-nowrap">
+                                                            {new Date(transaction.date).toLocaleDateString("id-ID", {
+                                                                day: "2-digit",
+                                                                month: "short",
+                                                                year: "numeric",
+                                                            })}
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <Badge
+                                                                variant={transaction.type === "MASUK" ? "default" : "secondary"}
+                                                                className={
+                                                                    transaction.type === "MASUK"
+                                                                        ? "bg-emerald-600 hover:bg-emerald-700 border-transparent text-white"
+                                                                        : "bg-rose-600 hover:bg-rose-700 border-transparent text-white"
+                                                                }
+                                                            >
+                                                                {transaction.type}
+                                                            </Badge>
+                                                        </TableCell>
+                                                        <TableCell className="max-w-[300px] truncate">{transaction.description}</TableCell>
+                                                        <TableCell
+                                                            className={`text-right font-semibold whitespace-nowrap ${transaction.type === "MASUK" ? "text-emerald-600" : "text-rose-600"
+                                                                }`}
                                                         >
-                                                            {transaction.type}
-                                                        </Badge>
-                                                    </TableCell>
-                                                    <TableCell className="font-medium whitespace-nowrap">{transaction.category}</TableCell>
-                                                    <TableCell className="max-w-[300px] truncate">{transaction.description}</TableCell>
-                                                    <TableCell
-                                                        className={`text-right font-semibold whitespace-nowrap ${transaction.type === "MASUK" ? "text-emerald-600" : "text-rose-600"
-                                                            }`}
-                                                    >
-                                                        {transaction.type === "MASUK" ? "+" : "-"} {formatCurrency(transaction.amount)}
-                                                    </TableCell>
-                                                    <TableCell className="text-muted-foreground text-sm">{transaction.treasurer}</TableCell>
-                                                    <TableCell>
-                                                        <div className="flex items-center justify-center gap-1">
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="icon-sm"
-                                                                onClick={() => handleViewNota(transaction)}
-                                                                title="Lihat Nota"
-                                                            >
-                                                                <FileTextIcon className="size-4" />
-                                                            </Button>
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="icon-sm"
-                                                                onClick={() => handleViewComments(transaction)}
-                                                                title="Komentar"
-                                                                className="relative"
-                                                            >
-                                                                <MessageCircleIcon className="size-4" />
-                                                                {transaction.comments && transaction.comments.length > 0 && (
-                                                                    <span className="absolute -top-1 -right-1 size-4 text-[10px] bg-primary text-primary-foreground rounded-full flex items-center justify-center font-semibold">
-                                                                        {transaction.comments.length}
-                                                                    </span>
-                                                                )}
-                                                            </Button>
-                                                            {transaction.imageUrl && (
+                                                            {transaction.type === "MASUK" ? "+" : "-"} {formatCurrency(transaction.amount)}
+                                                        </TableCell>
+                                                        <TableCell className="text-muted-foreground text-sm">{transaction.treasurer}</TableCell>
+                                                        <TableCell>
+                                                            <div className="flex items-center justify-center gap-1">
                                                                 <Button
                                                                     variant="ghost"
                                                                     size="icon-sm"
-                                                                    onClick={() => handleViewImage(transaction)}
-                                                                    title="Lihat Foto"
-                                                                    className="text-blue-600 hover:text-blue-700"
+                                                                    onClick={() => handleViewNota(transaction)}
+                                                                    title="Lihat Nota"
                                                                 >
-                                                                    <ImageIcon className="size-4" />
+                                                                    <FileTextIcon className="size-4" />
                                                                 </Button>
-                                                            )}
-                                                        </div>
-                                                    </TableCell>
-                                                </TableRow>
-                                            ))}
-                                        </TableBody>
-                                    </Table>
-                                </CardContent>
-                            </Card>
-                        </div>
-                    ))}
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="icon-sm"
+                                                                    onClick={() => handleViewComments(transaction)}
+                                                                    title="Komentar"
+                                                                    className="relative"
+                                                                >
+                                                                    <MessageCircleIcon className="size-4" />
+                                                                    {transaction.comments && transaction.comments.length > 0 && (
+                                                                        <span className="absolute -top-1 -right-1 size-4 text-[10px] bg-primary text-primary-foreground rounded-full flex items-center justify-center font-semibold">
+                                                                            {transaction.comments.length}
+                                                                        </span>
+                                                                    )}
+                                                                </Button>
+                                                                {transaction.imageUrl && (
+                                                                    <Button
+                                                                        variant="ghost"
+                                                                        size="icon-sm"
+                                                                        onClick={() => handleViewImage(transaction)}
+                                                                        title="Lihat Foto"
+                                                                        className="text-blue-600 hover:text-blue-700"
+                                                                    >
+                                                                        <ImageIcon className="size-4" />
+                                                                    </Button>
+                                                                )}
+                                                            </div>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                ))}
+                                            </TableBody>
+                                        </Table>
+                                    </CardContent>
+                                </Card>
+                            </div>
+                        )
+                    })}
 
                     {transactions.length === 0 && (
                         <div className="text-center py-12 text-muted-foreground border-2 border-dashed rounded-lg">
