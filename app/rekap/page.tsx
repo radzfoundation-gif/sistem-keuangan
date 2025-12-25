@@ -6,14 +6,18 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge"
 import { useTransactions, type Transaction } from "@/contexts/TransactionsContext"
 import { formatCurrency } from "@/lib/currency"
-import { WalletIcon, FileTextIcon } from "lucide-react"
+import { WalletIcon, FileTextIcon, EyeIcon } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { toast } from "sonner"
 import { generateNotaPDF } from "@/lib/nota-generator"
+import { NotaDialog } from "@/components/nota-dialog"
+import { useState } from "react"
 
 export default function RekapPage() {
     const { transactions } = useTransactions()
+    const [notaDialogOpen, setNotaDialogOpen] = useState(false)
+    const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null)
 
     // Calulate All Time Totals
     const totalIncome = transactions
@@ -52,13 +56,9 @@ export default function RekapPage() {
         return dateB.getTime() - dateA.getTime()
     })
 
-    const handleDownloadNota = async (transaction: Transaction) => {
-        try {
-            await generateNotaPDF(transaction)
-            toast.success("Nota berhasil didownload")
-        } catch (error) {
-            toast.error("Gagal mendownload nota")
-        }
+    const handleViewNota = (transaction: Transaction) => {
+        setSelectedTransaction(transaction)
+        setNotaDialogOpen(true)
     }
 
     return (
@@ -144,8 +144,8 @@ export default function RekapPage() {
                                                         <Button
                                                             variant="ghost"
                                                             size="icon-sm"
-                                                            onClick={() => handleDownloadNota(transaction)}
-                                                            title="Download Nota"
+                                                            onClick={() => handleViewNota(transaction)}
+                                                            title="Lihat Nota"
                                                         >
                                                             <FileTextIcon className="size-4" />
                                                         </Button>
@@ -165,6 +165,11 @@ export default function RekapPage() {
                         </div>
                     )}
                 </div>
+                <NotaDialog
+                    transaction={selectedTransaction}
+                    open={notaDialogOpen}
+                    onOpenChange={setNotaDialogOpen}
+                />
             </div>
         </div>
     )
