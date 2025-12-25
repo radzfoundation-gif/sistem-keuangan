@@ -69,7 +69,7 @@ export function AppSidebar() {
             <Image src="/logo-dhananjaya-new.jpg" alt="Logo" fill className="object-contain p-1" />
           </div>
           <div className="flex flex-col">
-            <span className="text-sm font-semibold leading-none">Keuangan</span>
+            <span className="text-sm font-semibold leading-none">Dhananjaya</span>
             <span className="text-xs text-muted-foreground leading-none mt-1">Komunitas</span>
           </div>
         </div>
