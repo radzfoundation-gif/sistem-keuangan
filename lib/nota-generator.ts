@@ -10,27 +10,83 @@ export async function generateNotaPDF(transaction: Transaction): Promise<void> {
     const qrData = generateTransactionQRData(transaction)
     const qrCodeImage = await generateQRCode(qrData)
 
-    // Header - Logo/Title
-    doc.setFillColor(0, 0, 0)
-    doc.rect(0, 0, 210, 30, "F")
+    // ===== PROFESSIONAL LETTERHEAD =====
+
+    // Border dekoratif atas
+    doc.setLineWidth(0.5)
+    doc.setDrawColor(41, 128, 185) // Biru
+    doc.line(10, 10, 200, 10)
+    doc.setLineWidth(0.2)
+    doc.line(10, 11, 200, 11)
+
+    // Logo Dhananjaya (dari file)
+    try {
+        // Load logo dari public folder
+        const logoImg = '/logo-dhananjaya-nota.jpg'
+        doc.addImage(logoImg, 'JPEG', 15, 15, 20, 20) // x, y, width, height
+    } catch (error) {
+        // Fallback jika logo tidak ditemukan - gunakan circle
+        doc.setFillColor(41, 128, 185)
+        doc.circle(25, 25, 8, "F")
+        doc.setTextColor(255, 255, 255)
+        doc.setFont("helvetica", "bold")
+        doc.setFontSize(10)
+        doc.text("D", 25, 27, { align: "center" })
+    }
+
+    // Nama Organisasi
+    doc.setTextColor(41, 128, 185)
+    doc.setFont("helvetica", "bold")
+    doc.setFontSize(18)
+    doc.text("KOMUNITAS DHANANJAYA", 45, 22)
+
+    // Subtitle & Informasi
+    doc.setTextColor(80, 80, 80)
+    doc.setFont("helvetica", "normal")
+    doc.setFontSize(9)
+    doc.text("Sistem Manajemen Keuangan Terintegrasi", 45, 28)
+
+    doc.setFontSize(8)
+    doc.setTextColor(100, 100, 100)
+    doc.text("📧 info@dhananjaya.org  |  📞 +62 xxx-xxxx-xxxx  |  🌐 www.dhananjaya.org", 45, 33)
+
+    // Border bawah header
+    doc.setLineWidth(0.3)
+    doc.setDrawColor(41, 128, 185)
+    doc.line(10, 38, 200, 38)
+    doc.setDrawColor(200, 200, 200)
+    doc.line(10, 39, 200, 39)
+
+    // ===== DOCUMENT TITLE =====
+    doc.setFillColor(41, 128, 185)
+    doc.rect(10, 45, 190, 12, "F")
     doc.setTextColor(255, 255, 255)
     doc.setFont("helvetica", "bold")
-    doc.setFontSize(22)
-    doc.text("NOTA TRANSAKSI", 105, 15, { align: "center" })
-    doc.setFontSize(10)
-    doc.text("Sistem Keuangan Komunitas", 105, 22, { align: "center" })
+    doc.setFontSize(16)
+    doc.text("NOTA TRANSAKSI KEUANGAN", 105, 53, { align: "center" })
 
     // Reset text color
     doc.setTextColor(0, 0, 0)
 
-    // Transaction Type Badge
+    // ===== TRANSACTION INFO BOX =====
+    // Transaction Type Badge & Nomor Nota
     const isIncome = transaction.type === "MASUK"
+
+    // Type Badge
     doc.setFillColor(isIncome ? 34 : 220, isIncome ? 197 : 38, isIncome ? 94 : 38)
-    doc.roundedRect(15, 40, 50, 10, 2, 2, "F")
+    doc.roundedRect(15, 64, 50, 10, 2, 2, "F")
     doc.setTextColor(255, 255, 255)
     doc.setFont("helvetica", "bold")
-    doc.setFontSize(12)
-    doc.text(transaction.type, 40, 46, { align: "center" })
+    doc.setFontSize(11)
+    doc.text(transaction.type, 40, 70, { align: "center" })
+
+    // Nomor Nota
+    doc.setTextColor(80, 80, 80)
+    doc.setFont("helvetica", "bold")
+    doc.setFontSize(9)
+    doc.text("No. Nota:", 135, 68)
+    doc.setFont("helvetica", "normal")
+    doc.text(`NT-${transaction.id.substring(0, 8)}`, 135, 72)
 
     // Date
     doc.setTextColor(100, 100, 100)
@@ -41,17 +97,17 @@ export async function generateNotaPDF(transaction: Transaction): Promise<void> {
         month: "long",
         year: "numeric",
     })
-    doc.text(`Tanggal: ${formattedDate}`, 195, 46, { align: "right" })
+    doc.text(`Tanggal: ${formattedDate}`, 195, 70, { align: "right" })
 
     // Divider
     doc.setDrawColor(200, 200, 200)
-    doc.line(15, 55, 195, 55)
+    doc.line(15, 78, 195, 78)
 
     // Transaction Details
     doc.setTextColor(0, 0, 0)
     doc.setFont("helvetica", "bold")
     doc.setFontSize(11)
-    let yPos = 70
+    let yPos = 85
 
     doc.text("DETAIL TRANSAKSI", 15, yPos)
     yPos += 10
@@ -108,14 +164,14 @@ export async function generateNotaPDF(transaction: Transaction): Promise<void> {
         doc.setFont("helvetica", "bold")
         doc.setFontSize(10)
         doc.setTextColor(80, 80, 80)
-        doc.text("KODE VERIFIKASI", 105, yPos, { align: "center" })
+        doc.text("SCAN QR CODE", 105, yPos, { align: "center" })
         doc.addImage(qrCodeImage, "PNG", 80, yPos + 5, 50, 50)
         yPos += 60
 
         doc.setFont("helvetica", "normal")
         doc.setFontSize(8)
         doc.setTextColor(120, 120, 120)
-        doc.text("Scan QR code untuk verifikasi transaksi", 105, yPos, { align: "center" })
+        doc.text("Scan untuk melihat detail transaksi di halaman rekap", 105, yPos, { align: "center" })
     }
 
     // Footer
@@ -146,26 +202,77 @@ export async function generateBulkNotaPDF(transactions: Transaction[]): Promise<
         const qrData = generateTransactionQRData(transaction)
         const qrCodeImage = await generateQRCode(qrData)
 
-        // Header
-        doc.setFillColor(0, 0, 0)
-        doc.rect(0, 0, 210, 30, "F")
+        // ===== PROFESSIONAL LETTERHEAD =====
+
+        // Border dekoratif atas
+        doc.setLineWidth(0.5)
+        doc.setDrawColor(41, 128, 185)
+        doc.line(10, 10, 200, 10)
+        doc.setLineWidth(0.2)
+        doc.line(10, 11, 200, 11)
+
+        // Logo Dhananjaya (dari file)
+        try {
+            const logoImg = '/logo-dhananjaya-nota.jpg'
+            doc.addImage(logoImg, 'JPEG', 15, 15, 20, 20)
+        } catch (error) {
+            doc.setFillColor(41, 128, 185)
+            doc.circle(25, 25, 8, "F")
+            doc.setTextColor(255, 255, 255)
+            doc.setFont("helvetica", "bold")
+            doc.setFontSize(10)
+            doc.text("D", 25, 27, { align: "center" })
+        }
+
+        // Nama Organisasi
+        doc.setTextColor(41, 128, 185)
+        doc.setFont("helvetica", "bold")
+        doc.setFontSize(18)
+        doc.text("KOMUNITAS DHANANJAYA", 45, 22)
+
+        // Subtitle & Informasi
+        doc.setTextColor(80, 80, 80)
+        doc.setFont("helvetica", "normal")
+        doc.setFontSize(9)
+        doc.text("Sistem Manajemen Keuangan Terintegrasi", 45, 28)
+
+        doc.setFontSize(8)
+        doc.setTextColor(100, 100, 100)
+        doc.text("📧 info@dhananjaya.org  |  📞 +62 xxx-xxxx-xxxx  |  🌐 www.dhananjaya.org", 45, 33)
+
+        // Border bawah header
+        doc.setLineWidth(0.3)
+        doc.setDrawColor(41, 128, 185)
+        doc.line(10, 38, 200, 38)
+        doc.setDrawColor(200, 200, 200)
+        doc.line(10, 39, 200, 39)
+
+        // ===== DOCUMENT TITLE =====
+        doc.setFillColor(41, 128, 185)
+        doc.rect(10, 45, 190, 12, "F")
         doc.setTextColor(255, 255, 255)
         doc.setFont("helvetica", "bold")
-        doc.setFontSize(22)
-        doc.text("NOTA TRANSAKSI", 105, 15, { align: "center" })
-        doc.setFontSize(10)
-        doc.text("Sistem Keuangan Komunitas", 105, 22, { align: "center" })
+        doc.setFontSize(16)
+        doc.text("NOTA TRANSAKSI KEUANGAN", 105, 53, { align: "center" })
 
         doc.setTextColor(0, 0, 0)
 
         // Transaction Type Badge
         const isIncome = transaction.type === "MASUK"
         doc.setFillColor(isIncome ? 34 : 220, isIncome ? 197 : 38, isIncome ? 94 : 38)
-        doc.roundedRect(15, 40, 50, 10, 2, 2, "F")
+        doc.roundedRect(15, 64, 50, 10, 2, 2, "F")
         doc.setTextColor(255, 255, 255)
         doc.setFont("helvetica", "bold")
-        doc.setFontSize(12)
-        doc.text(transaction.type, 40, 46, { align: "center" })
+        doc.setFontSize(11)
+        doc.text(transaction.type, 40, 70, { align: "center" })
+
+        // Nomor Nota
+        doc.setTextColor(80, 80, 80)
+        doc.setFont("helvetica", "bold")
+        doc.setFontSize(9)
+        doc.text("No. Nota:", 135, 68)
+        doc.setFont("helvetica", "normal")
+        doc.text(`NT-${transaction.id.substring(0, 8)}`, 135, 72)
 
         // Date
         doc.setTextColor(100, 100, 100)
@@ -176,16 +283,16 @@ export async function generateBulkNotaPDF(transactions: Transaction[]): Promise<
             month: "long",
             year: "numeric",
         })
-        doc.text(`Tanggal: ${formattedDate}`, 195, 46, { align: "right" })
+        doc.text(`Tanggal: ${formattedDate}`, 195, 70, { align: "right" })
 
         doc.setDrawColor(200, 200, 200)
-        doc.line(15, 55, 195, 55)
+        doc.line(15, 78, 195, 78)
 
         // Details
         doc.setTextColor(0, 0, 0)
         doc.setFont("helvetica", "bold")
         doc.setFontSize(11)
-        let yPos = 70
+        let yPos = 85
 
         doc.text("DETAIL TRANSAKSI", 15, yPos)
         yPos += 10
@@ -238,14 +345,14 @@ export async function generateBulkNotaPDF(transactions: Transaction[]): Promise<
             doc.setFont("helvetica", "bold")
             doc.setFontSize(10)
             doc.setTextColor(80, 80, 80)
-            doc.text("KODE VERIFIKASI", 105, yPos, { align: "center" })
+            doc.text("SCAN QR CODE", 105, yPos, { align: "center" })
             doc.addImage(qrCodeImage, "PNG", 80, yPos + 5, 50, 50)
             yPos += 60
 
             doc.setFont("helvetica", "normal")
             doc.setFontSize(8)
             doc.setTextColor(120, 120, 120)
-            doc.text("Scan QR code untuk verifikasi transaksi", 105, yPos, { align: "center" })
+            doc.text("Scan untuk melihat detail transaksi di halaman rekap", 105, yPos, { align: "center" })
         }
 
         // Footer

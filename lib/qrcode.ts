@@ -24,12 +24,7 @@ export function generateTransactionQRData(transaction: {
     date: string
     description: string
 }): string {
-    return JSON.stringify({
-        id: transaction.id,
-        type: transaction.type,
-        amount: transaction.amount,
-        date: transaction.date,
-        desc: transaction.description,
-        timestamp: new Date().toISOString(),
-    })
+    // Generate URL to rekap page
+    const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000'
+    return `${baseUrl}/rekap?id=${transaction.id}`
 }
