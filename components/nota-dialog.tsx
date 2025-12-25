@@ -61,7 +61,7 @@ export function NotaDialog({ transaction, open, onOpenChange }: NotaDialogProps)
                 <DialogHeader className="bg-black text-white p-6 rounded-t-lg">
                     <DialogTitle className="text-center text-xl tracking-wider">NOTA TRANSAKSI</DialogTitle>
                     <DialogDescription className="text-center text-white/70 text-xs">
-                        Sistem Keuangan Komunitas
+                        Komunitas Seni Dhananjaya
                     </DialogDescription>
                 </DialogHeader>
 
