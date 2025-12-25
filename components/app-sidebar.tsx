@@ -33,8 +33,13 @@ const menuItems = [
     url: "/nota",
   },
   {
-    title: "Laporan",
+    title: "Rekap",
     icon: TrendingUpIcon,
+    url: "/rekap",
+  },
+  {
+    title: "Laporan",
+    icon: FileTextIcon,
     url: "/laporan",
   },
   {
